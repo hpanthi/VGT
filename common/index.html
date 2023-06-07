@@ -1,0 +1,322 @@
+<!--
+/**
+ * This file is part of the Virtual Game Table distribution 
+ * (https://github.com/jaxankey/WASII).
+ * Copyright (c) 2015-2021 Jack Childress (Sankey).
+ * 
+ * This program is free software: you can redistribute it and/or modify  
+ * it under the terms of the GNU General Public License as published by  
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+-->
+<html><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loading...</title>
+  <meta name="description" content="Virtual Game Table">
+  <meta name="author"      content="Jack C. Sankey">
+
+  <style>
+
+    * {
+      padding: 0;
+      margin : 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 1em;
+      font-weight: normal;
+      color: black;
+      background-color: transparent;
+    }
+
+    body {
+      height: 100%;
+      overflow: hidden;
+      background-color: gray;
+    }
+
+    a {background-color: transparent; color: blue;}
+
+    #gameboard {
+      cursor: crosshair;
+    }
+
+    h1 {
+      font-size: 1.5em;
+      color: rgb(187, 70, 70);
+      background-color: transparent;
+    }
+    h2 {
+      font-size: 1.3em;
+      color: rgb(70,70,187)
+    }
+
+    .row_left {
+      display: flex;
+      flex-direction: row;
+      margin: 0.4em;
+    }
+
+    input, button, select, ul {
+      /* position: relative;    /* used only for tool-tip stuff */
+      /* display: inline-block; /* used only for tool-tip stuff */
+      color: #444;
+      border: solid #444 0.05em;
+      padding: 0.2em;
+      margin-left:  0.01em; /* Fudge to make things align :( */
+      margin-right: 0.01em; /* Fudge to make things align :( */
+    }
+    button, input {padding-left: 0.3em; padding-right: 0.3em;}
+
+    button:hover {
+      background-color: rgba(187, 70, 70, 0.1);
+    }
+    button:active {
+      background-color: rgba(187, 70, 70, 1);
+      color: white;
+    }
+
+    input:focus, select:focus {
+      color: black;
+    }
+    
+
+    /* Loading indicator */
+    #loader {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      top:    0;
+      right:  0;
+      bottom: 0;
+      left:   0;
+      background-color: #000000;
+      color: white;
+      z-index: 100;
+      transition: all;
+      transition-duration: 0.5s;
+    }
+      #progress {
+        margin-top: 2em;
+        font-size: 2em;
+        text-align: center;
+        vertical-align: center;
+        background-color: transparent;
+        color: white;
+      }
+      #progress_path {
+        text-align: center;
+        vertical-align: center;
+        background-color: transparent;
+        color: white;
+      }
+
+    #help {
+      position: absolute;
+      display: flex;
+      flex-direction: row;
+      bottom: 2em;
+      left: 2em;
+      top: 2em;
+      right: 2em;
+      opacity: 0;
+      clip-path: inset(100% 100% -1em -1em);
+      padding: 0;
+      background-color: white;
+      transition-property: all;
+      transition-duration: 0.2s;
+      transition-timing-function: linear;
+      z-index: 50;
+      overflow-x: auto;
+      box-shadow: 0 0 5px 5px rgba(0, 0, 0, 0.2);
+    }
+    .center_fit {
+      max-width: 90%;
+      max-height: 90%;
+      margin: auto;
+    }
+    img {
+      background-color: transparent;
+    }
+    #help_button, #controls_button {
+      position: absolute;
+      display: flex;
+      flex-direction: row;
+      bottom: 1em;
+      left: 1em;
+      background-color: white;
+      z-index: 49;
+      transition-property: all;
+      transition-duration: 0.3s;
+      box-shadow: 0 0 5px 5px rgba(0, 0, 0, 0.2);
+    }
+    #controls_button {
+      bottom: unset;
+      top: 1em;
+      z-index: 39;
+      opacity: 0;
+    }
+
+    .close_button {
+      position: absolute;
+      display: flex;
+      flex-direction: row;
+      top: 0.4em;
+      right: 0.4em;
+      z-index: 49;
+      box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+
+    #controls {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      z-index:40;
+      left: 1em;
+      top:  1em;
+      transition-property: all;
+      transition-duration: 0.2s;
+      transition-timing-function: linear;
+      background-color: white;
+      box-shadow: 0 0 5px 5px rgba(0, 0, 0, 0.2);
+      clip-path: inset(-1em -1em -1em -1em); /* for the shadow */
+    }
+      /*#new    {}*/
+      #setups {margin-left: -0.07em; flex-grow:1;}
+      #rules  {margin-left: 0.4em;}
+      #save   {margin-left: 0.4em;}
+      #load   {margin-left: 0.4em;}
+      /*#volume_container {}*/
+      #volume {
+        flex-grow: 1;
+        padding: 0;
+        margin-left: 0.4em;
+      }
+
+      .team_name {flex-grow: 1; margin-left:-0.07em;}
+      .name { width: 12em; }
+      .othername { width: 12em; border:0; pointer-events: none; }
+
+    #chat {
+      display: flex;
+      flex-direction: column;
+    }
+      #messages {
+        overflow-y: auto; 
+        height: 20em;
+        margin-bottom: 0.4em;
+        word-wrap: break-word;
+        scroll-behavior: smooth;
+      }
+      #messages li:nth-child(even) { background-color: rgba(187, 70, 70, 0.1) }
+      li {padding: 0.3em;}
+      b  {background-color: transparent; font-weight: bold;}
+      #chat-box {
+        color: rgba(187, 70, 70, 0.5);
+      }
+
+  </style>
+
+  <link rel="shortcut icon" type="image/ico" href="images/favicon.ico" />
+
+</head>
+
+<body id="body">
+  
+  <!-- Holds the canvas etc. -->
+  <div id="gameboard"></div>
+  
+  <div id="controls_button"><button style='border: none; width: 2em;' onpointerdown="VGT.html.show_controls();"><h1>+</h1></button></div>
+
+  <div id="controls">
+    
+    <div class='close_button'><button style='border: none; width: 2em' onpointerdown='VGT.html.hide_controls();'>X</button></div>
+
+    <div id="setup">
+      
+      
+      <div class='row_left'><h1>Setup</h1></div>
+      
+      <div class='row_left'>
+        <button id='new'    
+                title='Resets everything according to the selected game mode.' 
+                onclick="new_game();">New Game</button>
+                
+        <select id="setups" 
+                title='Game mode' 
+                onchange="VGT.interaction.onchange_setups();"></select>
+        
+        <button id="rules"  
+                title='Rules document'
+                onclick="VGT.game.open_rules();">Rules</button>
+      
+        <button id='save' 
+                title='Saves the current setup to a file'
+                onclick="VGT.game.save_state();">Save</button>
+        <button id='load' 
+                title='Loads a setup from a file'
+                onclick="VGT.game.load_state_from_file();">Load</button>
+      </div>
+
+      
+      <div id='volume_container' class='row_left'>
+        Volume: <input 
+          title='Audio volume (if there are any sounds)'
+          type="range" min="0" max="100" value="25"  class="slider" id="volume" onchange="VGT.interaction.onchange_volume();">
+          <input type='checkbox' id='debug' style='margin-left:0.4em; margin-top: 0.2em;' title="Debug mode: leave unchecked unless you know what this does.">
+      </div> 
+
+      <div id='special' style='display:none'>
+        <div class='row_left' style='margin-top: 1em;'><h1 id='special_title'>Game Controls</h1></div>
+        <div id='special_controls' class='row_left'></div>
+      </div>
+      
+      
+    
+    </div>
+
+    <div class='row_left' style='margin-top: 1em;'><h1>People</h1></div>
+    
+    <div id='clients'></div>
+
+   <!-- where chat messages will appear -->
+    <div id='chat' class='row_left'>
+      <ul id="messages"></ul>
+      <input id="chat-box" svalue="Type your chat messages here..." onfocus="this.value='';"/>
+    </div>
+
+  </div><!-- End of controls -->
+
+
+  <div id="help" onpointerdown="VGT.html.hide_help();">
+    <img src='images/controls.png' class='center_fit'>
+    <div class='close_button'><button style='border: none; width: 2em'>X</button></div>
+  </div><!-- End of help -->
+
+  <div id="help_button"><button style='border: none; width: 2em;' onpointerdown="VGT.html.toggle_help();"><h1>?</h1></button></div>
+
+  <div id="loader"><div id="progress">Loading...</div><div id="progress_path"></div></div>
+
+    
+
+
+  
+  <!-- External Scripts -->
+  <script src="/pixi.js"></script>
+  <script src="/howler.js"></script>
+  <script src="/socket.io.js"></script>
+  
+  <!-- My Scripts -->
+  <script>exports = {};</script>
+  <script src="fun.js"></script>
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+</body></html>
