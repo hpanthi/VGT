@@ -48,17 +48,24 @@ howler_version    = 'howler.min.js';
 
 // Requirements to be installed by npm
 var fs   = require('fs');                     // file system stuff
-var app  = require('express')();              // routing handler
+var express  = require('express');              // routing handler
+var app = express();
 var http = require('http').createServer(app); // listening
 var io   = require('socket.io')(http);        // fast input/output
 var fun  = require('./common/fun');           // My common functions
+var user = require('./common/user')
+const QRCode = require('qrcode')
 
 
 
+// Set EJS as templating engine
+app.set('view engine', 'ejs');
+app.use(express.static(__dirname));
 // port upon which the server listens
 fun.log_date('');
 fun.log_date('Arguments:');
 for(var n in process.argv) fun.log_date(process.argv[n]);
+
 
 // find out if a game name and port was supplied
 game_name = process.argv[2];
@@ -137,10 +144,49 @@ app.get('/socket.io.js.map', function(q, a) { a.sendFile(root_directory + '/node
 // General files, following the above search order (private/game/, games/game/, common/)
 app.get('/',                 function(q, a) { send_file(a, 'index.html'                                           );} );
 app.get('/:a',               function(q, a) { send_file(a, q.params.a                                             );} );
+
+
+
+app.get('/scan/qr', (req, res) => {
+ 
+  // The render method takes the name of the HTML
+  // page to be rendered as input
+  // This page should be in the views folder
+  // in the root directory.
+  const url = `http://192.168.1.5:${port}/api/redirect`
+  //let stringdata = JSON.stringify(url)
+  QRCode.toDataURL(url, function (err, code) {
+    if(err) return console.log("error occurred in QR code")
+
+    res.render('user', {QR : code})
+})
+  //res.render('home', {QR : "qr code"});
+
+});
+
+
+app.get('/api/redirect', (req, res) =>{
+  last_id++;
+  const url = `http://192.168.1.5:${port}/api/users/${last_id}`
+  res.redirect(url)
+});
+
+
+app.get('/api/users/:id', (req, res) => {
+    id = parseInt(req.params.id);
+    if(id == NaN || id > 8)
+      res.send("<p>Invalid input</p>");
+    else{
+      userData = user[id]
+      fun.log(user[id].cards[0]) 
+      //userData = user.userArray[id]
+      res.render('home', {user : userData})
+    }
+});
+
 app.get('/:a/:b',            function(q, a) { send_file(a, q.params.a+'/'+q.params.b                              );} );
 app.get('/:a/:b/:c',         function(q, a) { send_file(a, q.params.a+'/'+q.params.b+'/'+q.params.c               );} );
 app.get('/:a/:b/:c/:d',      function(q, a) { send_file(a, q.params.a+'/'+q.params.b+'/'+q.params.c+'/'+q.params.d);} );
-
 
 
 ////////////////////////////
@@ -217,7 +263,7 @@ var last_names_2  = ['tastic', 'cakes', 'pants', 'face', 'juice',
 
 // When a client connects
 io.on('connection', function(socket) {
-
+  fun.log("client connected");
   // Make sure we have a clients list
   if(!state.clients) state.clients = {};
 
